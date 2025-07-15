@@ -1,25 +1,29 @@
 # DO180-apps
 DO180 Repository for Sample Applications
 
-Here’s a clean table format you can drop into a slide, doc, or wiki page. It lays out each validation category, what it checks for, and an example to ground it.
-
-⸻
-
-Validation Categories in FED Wire and ACH Payment Processing
-
-#	Validation Category	What it Checks	Example
-1	Field Validation	Format, length, and data type of individual fields	BIC is 8 or 11 alphanumeric characters
-2	Semantic Validation	Logical correctness of values	BIC exists and is SWIFT-registered
-3	Rules Validation	Business-specific rules	Debit account is active and has sufficient balance
-4	Schema Validation	Conformance to XML/flat file schemas	pain.001 structure is followed
-5	Authorization Validation	Sender’s permission to initiate transactions	Only authorized users can initiate wire over $500K
-6	Sanctions & Compliance Validation	Screening against regulatory lists	Name doesn’t appear on OFAC list
-7	Limit Validation	Transaction amount vs. configured thresholds	ACH batch under $100K daily cap
-8	Cutoff Time Validation	Timing rules for processing windows	Wires submitted after 5 PM get next-day processing
-9	Data Enrichment Validation	Accuracy of system-derived data	Routing number maps to correct bank name
-10	Channel-Specific Validation	Constraints based on origination method	Real-time API doesn’t allow future-dated wires
-
-
-⸻
-
-Let me know if you want a PowerPoint slide or an Excel export of this.
+Subject: Urgent Input Needed: End-to-End Payment Validation Matrix (FED & ACH)
+Hi all,
+As discussed, we are putting together an end-to-end view of payment validation across all channels and
+orchestration points for FED Wire and ACH flows. This has become an urgent ask from Ram, driven by
+recent production issues, and we need to complete the initial validation presence matrix ASAP.
+For now, this is not a detailed mappingjust a Yes/No input to indicate whether each validation category listed
+applies within your respective domain/component.
+We will double-click into details later, including how each validation is performed, specific rules, and
+ownership. Right now, we need quick alignment on whether the validation type exists in your layer of
+processing or not.
+Owners & Areas:
+- @Bronja, Bajro (CWM-NR) H2H Bulk File Orchestrator
+- @Marok, Gurinder Portal / BFF
+- @Singh, Anand Y External API
+- @Khosla, Ratul R Single Payment Orchestrator / Domain API
+- @Sood, Sameer Volpay FED & ACH Engine
+Action Required:
+Please fill in the matrix by end of day today with just YES / NO under your area for each validation category
+Page 1
+Email Request: End-to-End Payment Validation Matrix
+(Field, Semantic, Rules, Schema, Authorization, Sanctions, Limit, Cutoff, Enrichment, Channel-Specific).
+View Matrix: [Link to Confluence or document]
+Let me know if anything is unclear, but againspeed is key here so we can unblock the detailed follow-up
+analysis.
+Thanks,
+Anand
