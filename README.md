@@ -1,29 +1,13 @@
 # DO180-apps
 DO180 Repository for Sample Applications
 
-Subject: Urgent Input Needed: End-to-End Payment Validation Matrix (FED & ACH)
-Hi all,
-As discussed, we are putting together an end-to-end view of payment validation across all channels and
-orchestration points for FED Wire and ACH flows. This has become an urgent ask from Ram, driven by
-recent production issues, and we need to complete the initial validation presence matrix ASAP.
-For now, this is not a detailed mappingjust a Yes/No input to indicate whether each validation category listed
-applies within your respective domain/component.
-We will double-click into details later, including how each validation is performed, specific rules, and
-ownership. Right now, we need quick alignment on whether the validation type exists in your layer of
-processing or not.
-Owners & Areas:
-- @Bronja, Bajro (CWM-NR) H2H Bulk File Orchestrator
-- @Marok, Gurinder Portal / BFF
-- @Singh, Anand Y External API
-- @Khosla, Ratul R Single Payment Orchestrator / Domain API
-- @Sood, Sameer Volpay FED & ACH Engine
-Action Required:
-Please fill in the matrix by end of day today with just YES / NO under your area for each validation category
-Page 1
-Email Request: End-to-End Payment Validation Matrix
-(Field, Semantic, Rules, Schema, Authorization, Sanctions, Limit, Cutoff, Enrichment, Channel-Specific).
-View Matrix: [Link to Confluence or document]
-Let me know if anything is unclear, but againspeed is key here so we can unblock the detailed follow-up
-analysis.
-Thanks,
-Anand
+Subject: Inquiry Regarding Book-to-Book Transfers and Related Processes
+Dear Keyuri and Jennifer,
+I hope this email finds you well. I have a few questions regarding our book-to-book transfer processes (where the customer account lies within RBC, including cases involving two different legal entities in Finacle). Could you please provide clarity on the following points?
+	1	Fraud Checks for Book-to-Book Transfers: Do we perform fraud checks for book-to-book transfers?
+	2	Sanction Checks for Book-to-Book Transfers: Are sanction checks conducted for book-to-book transfers?
+	3	Rationale for Fraud/Sanction Checks: If fraud or sanction checks are performed for book-to-book transfers, is this due to leveraging the Fedwire VolPay flow and its associated restrictions, or are there specific business, regulatory, or compliance requirements driving these checks?
+	4	Use of Fedwire VolPay for Book-to-Book Transfers: Why is the book-to-book transfer process routed through the Fedwire VolPay implementation (aside from determining payment instructions by analyzing beneficiary information)? If a transfer is clearly identified as book-to-book, is it still required to follow the Fedwire VolPay workflow?
+Your insights on these points would be greatly appreciated to better understand the process and any underlying requirements. Please let me know if you need additional context or if we should schedule a discussion to go over this.
+Thank you for your time and assistance.
+Best regards, [Your Name] [Your Job Title] [Your Contact Information]
