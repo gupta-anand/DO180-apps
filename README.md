@@ -1,33 +1,64 @@
-# DO180-apps
-DO180 Repository for Payment Router Discussion – Next Steps
+# DO180
 
-Hi all,
+Alright, let’s unpack this carefully — this kind of timeout pattern with Camunda (Zeebe) under moderate load (200 TPS, 10 concurrent users) is a clear signal of a bottleneck or configuration mismatch between the gateway and the Zeebe broker. The key clues are:
+	•	504 Gateway Timeout
+	•	Request command-api-1 to camunda-qat-zeebe-0... timed out in PT15S
+	•	and occasionally 401 (which might be a side effect, not the root cause).
 
-Thanks for the engaging and thoughtful discussion earlier today. Below is a quick summary of the key points and the next steps we agreed on.
-
-⸻
-
-Key Points:
-	•	Clear Book Transfer should be decoupled from Fedwire logic and treated as a standalone rail.
-	•	Global Payment Router will determine the optimal rail (Clear Book, ACH, Fedwire) in a single call and return a synchronous or technical ack based on rail capability.
-	•	Fraud and Sanctions should not be on the critical path for predictable flows like LMS or CAD-to-CAD transfers. Risk controls should adapt to context.
-	•	Sweeps and Multi-Entity Transfers may still require sanctions, especially across legal entities or currencies.
-	•	Sanctions Effectiveness must be ensured at the time of transaction. The idea of pre-scrubbing accounts (vs. scanning every transaction) was raised as a potential efficiency improvement.
-	•	We need to avoid a uniform design that burdens all transfers with unnecessary checks and delays.
+Let’s go through likely causes in order of probability:
 
 ⸻
 
-Next Steps:
-	•	Suresh to coordinate a working session with:
-	•	Harish (Compliance)
-	•	Sean Lonergan (Fraud)
-	•	Liquidity business leads
-	•	Architecture/design stakeholders (please include me)
-	•	Objective: Align on when fraud and sanction checks are required vs. optional, and confirm business rules for routing and risk evaluation.
-	•	Clarify compliance expectations around “sanctions effective at time of transaction” and feasibility of account-level pre-scrubbing.
-	•	Confirm where vendor product logic ends and internal service responsibility begins.
+1. Gateway-to-Broker Communication Bottleneck
 
-Please include me in the upcoming meetings, even as an optional attendee, so I can share input as we finalize the design.
+The message Request command-api-1 to camunda-qat-zeebe-0... timed out indicates that the gateway sent a request to the broker (port 26501) and didn’t get a response within 15 seconds.
+This typically means the broker is overloaded or slow to process commands.
+
+Root causes here might be:
+	•	Broker CPU saturation (too many workflow instances being created or updated).
+	•	Disk I/O bottleneck — Zeebe persists state using RocksDB. High write load without SSD-backed disks or low IOPS storage leads to lag.
+	•	Insufficient Zeebe partitions or replicas. A single-partition setup under 200 TPS will choke.
+	•	Backpressure kicking in — Zeebe’s internal flow control pauses new requests when it can’t keep up.
+
+How to verify:
+	•	Check broker logs for Backpressure applied or Actor is blocked messages.
+	•	Check kubectl top pods for CPU/memory spikes.
+	•	Use Camunda Operate or metrics (if enabled) to see processing lag.
+
+⸻
+
+2. Timeout Configuration Too Low
+
+By default, Zeebe gateway waits 15 seconds (PT15S) for a broker response. At high TPS, this can be too aggressive.
+
+Fix:
+Increase requestTimeout in gateway configuration, for example:zeebe:
+  gateway:
+    network:
+      requestTimeout: In short:
+
+Here’s what’s most likely happening:
+
+The Zeebe broker is under heavy load (CPU or disk I/O bound), causing gateway requests to time out after 15 seconds. This triggers 504 errors and secondary 401s on retry.
+
+⸻
+
+Next steps to confirm and fix:
+	1.	Check broker logs for backpressure or timeout messages.
+	2.	Monitor pod resources (kubectl top pods) during the load test.
+	3.	Scale out:
+	•	Increase partitions (zeebe.broker.partitionsCount)
+	•	Add broker replicas
+	•	Move to SSD-backed disks.
+	4.	Increase request timeout on gateway to 30s temporarily.
+	5.	Re-run the load test and observe if 504s reduce.
+
+
+
+
+
+
+
 
 
 
