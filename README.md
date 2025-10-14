@@ -1,68 +1,51 @@
+Purpose:
+To challenge the PODS design decision to segregate payment event statuses by Line of Business (LOB) topics (e.g., RBC Clear, RBC Canada) and propose alternative designs that preserve the unified single payment router’s abstraction while addressing geographical data restrictions.Context and Critique:
+Sean, we need your input to evaluate the PODS decision to publish payment event statuses to LOB-specific topics, which requires systems like LMS to be aware of the LOB (e.g., RBC Clear or RBC Canada) processing a transaction. This design undermines the core purpose of the unified single payment router, which is to abstract payment engine and LOB details from originating systems. Key concerns include:  Undermines Single Payment Router Abstraction:
+The unified router is designed to allow systems like LMS to initiate a transfer (e.g., A to B) without needing to know the underlying engine (e.g., Fedwire, GBT, SPS) or LOB. Requiring LMS to subscribe to LOB-specific topics (e.g., RBC Clear or RBC Canada) for status updates forces it to understand LOB-specific processing, defeating the router’s abstraction and adding integration complexity.
+Cross-Border Transaction Complexity:
+For global cross-border book transfers (e.g., RBC Clear to RBC Canada), LMS must listen to both RBC Clear and RBC Canada topics to track a single transaction’s status. This is inefficient, requiring LMS to correlate events across multiple topics, increasing the risk of errors and complicating development, especially for systems like LMS that simply want to execute a transfer without LOB awareness.
+Geographical Restrictions Can Be Addressed Differently:
+I understand the need to segregate data due to geographical restrictions (e.g., Singapore’s GDPR-like requirements to prevent unauthorized access). However, other authorization techniques, such as role-based access control (RBAC) or attribute-based access control (ABAC), could enforce data segregation within a unified topic, preserving the router’s abstraction and simplifying consumer logic.
+Inconsistency with Channel-Agnostic Design:
+Channels like LMS and RBC Edge should remain agnostic to LOB details. Forcing them to subscribe to LOB-specific topics shifts the burden of understanding payment flows to the consumer, contradicting the router’s goal of simplifying interactions. For instance, RBC Edge should not need to know whether a payment involves RBC Clear to enforce data restrictions.
+Legacy Constraints Are Not Insurmountable:
+The reliance on LOB-specific topics stems from legacy system constraints, such as missing channel IDs for some RBC Canada wires. However, with the Global Payments Platform (GPP) introducing channel identification, we can explore designs that leverage channel-based segregation or unified schemas to reduce LOB dependency.
 
+Proposed Alternatives:
+To maintain the single payment router’s abstraction and address geographical restrictions, we should consider:  Unified Topic with Access Controls:  Publish all payment events to a single PODS topic, using RBAC or ABAC to restrict access based on consumer credentials or attributes (e.g., BIC, region). This allows LMS to subscribe to one topic while ensuring compliance with geographical restrictions (e.g., Singapore wires hidden from unauthorized consumers).  
+Example: Include BIC or LOB metadata in event headers for consumer-level filtering without requiring separate topics.
 
-Key Takeaways for SPS Integration with Global Payment RouterPurpose of Integration:The integration aims to connect RBC Clear's Liquidity Management System (LMS) with the global single payment router to streamline payment processing across various rails (Clear, Fedwire, book transfers).
-SPS acts as a proxy to the DDA system, handling account posting (intraday and EOD) without payment orchestration.
+Channel-Based Event Segregation:  Segregate events by originating channel (e.g., LMS, RBC Edge) rather than LOB. Each channel subscribes to its own topic, receiving only events for its initiated transactions. This preserves abstraction, as LMS would not need to know LOB details.  
+Challenge: Legacy wires (e.g., inbound Swift) lack channel IDs. Solutions include assigning default channel IDs in GPP or using UETR for transaction correlation.
 
-Global Single Payment Router:Routes payment instructions from various channels (e.g., LMS for high-value, low-value, ACH, or book transfers) to the appropriate payment engine.
-Primarily a routing capability, not responsible for decision-making or orchestration.
-Does not currently route Interac or Canadian RTR transactions.
+Enhanced Business View for Status Tracking:  Promote the Business View schema in PODS, which consolidates payment events into a single document per UETR, abstracting raw event details (e.g., Paxo 2, Pan 01). This simplifies status tracking for consumers like LMS, reducing the need to filter LOB-specific events.  
+Add optional fields for geographical metadata to the Business View, enabling consumers to filter events without LOB-specific topics.
 
-SPS Functionality:SPS focuses on account posting (debit/credit entries for Canadian client DDA accounts) and acts as an adapter to core banking.
-Handles soft postings intraday and hard postings at EOD, providing finality responses but not orchestrating payments.
-Does not emit events to PODS; relies on IMM for interactions with PODS for RBC Canada clients.
+Kafka Bridging with Protocol-Level Filtering:  For Azure-to-on-prem Kafka bridging (e.g., RBC Clear on Azure to RBC Canada on-prem), implement protocol-level filtering to enforce geographical restrictions within a single topic. This supports a unified topic model while ensuring compliance with regional regulations.
 
-Payment Processing Design:A generic interface allows dynamic routing based on cost or speed, but payment type-specific endpoints are preferred to handle unique behaviors (e.g., E-transfer registration in Canada).
-Channels must be aware of payment type differences to avoid a single point of failure in the router.
+Agenda:  Critique of LOB-Segregated Topic Design (15 mins)  How LOB-specific topics break the single payment router’s abstraction.  
+Challenges for cross-border transfers requiring multiple topic subscriptions.
 
-PODS Integration:PODS is not part of the initial transaction flow to avoid high availability requirements.
-Payment status updates are handled asynchronously via PODS, with corrective actions taken later.
+Alternative Design Proposals (20 mins)  Unified topic with RBAC/ABAC for geographical restrictions.  
+Channel-based segregation vs. LOB-based segregation.  
+Enhancing Business View for simplified status tracking.
 
-Liquidity Management and BFS:BFS supports sweeping and account posting but assumes orchestration, compliance, and validation are handled externally.
-Proper payment orchestration is required before payments hit SPS to ensure compliance and fraud risk management.
+Addressing Legacy Constraints (15 mins)  Handling missing channel IDs in legacy RBC Canada wires.  
+Leveraging GPP for improved event metadata.
 
-Payment Certainty and Finality:SPS provides finality responses (completion, errors, or timeouts), requiring channels to interpret results (e.g., insufficient balance).
-Options for handling failures include voiding, reversing, or retrying, with server-side settings to prevent duplication.
+Kafka Bridging and Geo-Restrictions (10 mins)  Azure-to-on-prem Kafka bridging with protocol-level filtering.  
+Collaboration with the Enterprise Kafka team.
 
-Onboarding and Configuration:Duplication checks are part of onboarding, with consumers providing an FPS application ID.
-New business cases or clients require config changes for DDA transaction codes and detailed onboarding discussions.
+Next Steps and Action Items (5 mins)  Assign owners to evaluate RBAC/ABAC feasibility.  
+Plan discussions with the Enterprise Kafka team on bridging solutions.
 
-Action ItemsSchedule Follow-Up Discussion:Arrange a drill-down session to further clarify the global router’s role and SPS integration requirements.
-Owner: Meeting organizer/speaker.
-Timeline: Within 1-2 weeks (by October 28, 2025).
+Preparation:
+Please review the attached PODS status notes and the prior SPS integration notes. Come prepared to discuss:  Feasibility of unified topic with RBAC/ABAC vs. LOB-specific topics.  
+Strategies to address missing channel IDs in legacy wires.  
+Resource implications for implementing channel-based segregation or enhanced Business View.
 
-Share SPS Architecture Documentation:Distribute the SPS architecture diagram and relevant current-state documentation to stakeholders for review.
-Owner: Speaker.
-Timeline: By October 21, 2025.
+Attachments:  PODS Status Notes (October 14, 2025)  
+Payment Integration Notes (October 14, 2025)
 
-Conduct RAM Review:Initiate a RAM review to discuss the global router’s capabilities and ensure alignment with SPS and LMS requirements.
-Owner: RAM team lead.
-Timeline: Schedule by November 4, 2025.
-
-Define LMS Requirements:Gather concrete requirements from the LMS Canada team to clarify whether they need payment orchestration or only account posting.
-Owner: LMS team.
-Timeline: By November 11, 2025.
-
-Discuss Low-Value and RTR RTP Payments:Engage Livio and the RAM team to finalize plans for routing low-value and RTR RTP payments through the global router.
-Owner: Project lead.
-Timeline: By November 18, 2025.
-
-Onboarding Process for New Clients:Develop a detailed onboarding process for new consumers or business cases, covering reconciliation, settlement, and DDA transaction code configurations.
-Owner: Task experience team/DBA.
-Timeline: By December 2, 2025.
-
-Enhance PODS Integration Strategy:Define how PODS will handle asynchronous payment status updates and ensure it is not part of the critical transaction flow.
-Owner: PODS integration team.
-Timeline: By December 9, 2025.
-
-Review Duplication Check Process:Validate the duplication check process during onboarding, ensuring the FPS application ID is correctly implemented.
-Owner: Onboarding team.
-Timeline: By November 25, 2025.
-
-Assess Business and Client Experience:Conduct a review of the business and client experience to evaluate reconciliation impacts and ensure alignment with integration goals.
-Owner: Business analyst team.
-Timeline: By December 16, 2025.
-
-Test Failure Handling Mechanisms:Test voiding, reversing, and retry mechanisms to ensure payment certainty and proper error handling (e.g., closed accounts, timeouts).
-Owner: QA team.
-Timeline: By December 23, 2025.
+Looking forward to your insights to refine this design and align with the unified single payment router’s vision!  
 
